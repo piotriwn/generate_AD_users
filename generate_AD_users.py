@@ -1,6 +1,7 @@
 import random
 
-OFFICE_LIST = ["London", "Cambridge", "Bristol", "Liverpool", "New York", "Dallas", "San Francisco", "Chicago", "Ottawa", "Vancouver", "Quebec", "Mombai", "Delhi", "Bangalore"]
+OFFICE_DICT = {"England" : ("London", "Cambridge", "Bristol", "Liverpool"), "United States" : ("New York", "Dallas", "San Francisco", "Chicago"), "Canada": ("Ottawa", "Vancouver", "Quebec"), "India": ("Mombai", "Delhi", "Bangalore")}
+
 
 class Employee:
     def __init__(self, name, surname, username):
@@ -11,6 +12,8 @@ class Employee:
         self.managerLevel = None
         self.manager = None
         self.office = None
+        self.OULevel1 = None # country
+        self.OULevel2 = None # office
 
     def showProperties(self):
         return f"{self.name:<15} {self.surname:<20} {self.username:<10} {self.emailAlias:<40} {self.managerLevel:<3} {self.manager:<10} {self.office}"
@@ -24,7 +27,6 @@ def createUserObjects(k):
         username = randName[0:3] + randSur[0:3] + "01"
         employeeList.append(Employee(randName, randSur, username))
     employeeList.sort(key = lambda x: x.username)
-    #print(employeeList[2].name)
     return employeeList
 
 def checkUsernameUniq(employeeList):
@@ -72,9 +74,16 @@ def assignToOffice(employeeList): # ugh, very inefficent (O(n2) I suppose), will
 # another consideration - input List has to be sorted by emp.managerLevel attribute (it is since it is executed in main func after defineManagers())
     for emp in employeeList:
         if emp.managerLevel <= 3:
-            emp.office = random.choice(OFFICE_LIST)
+            country = random.choice(list(OFFICE_DICT.keys()))
+            office = random.choice(OFFICE_DICT[country])
+            emp.office = office
+            emp.OULevel1 = country
+            emp.OULevel2 = office
         else:
-            emp.office = next(x.office for x in employeeList if x.username == emp.manager)
+            empRef = next(x for x in employeeList if x.username == emp.manager)
+            emp.OULevel1 = empRef.OULevel1
+            emp.OULevel2 = empRef.OULevel2
+            emp.office = empRef.office
     return None
 
 def printStatistics(employeeList):
@@ -102,7 +111,7 @@ with open("names2000.csv", 'r', encoding="utf-8-sig") as namesFile:
         for i in range(100):
             print(sorted(empList,key = lambda x: x.managerLevel)[i].showProperties())
 
-        # printStatistics(empList)
+        printStatistics(empList)
 
         
 
