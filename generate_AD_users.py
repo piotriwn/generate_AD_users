@@ -2,6 +2,12 @@ import random
 
 OFFICE_DICT = {"England" : ("London", "Cambridge", "Bristol", "Liverpool"), "United States" : ("New York", "Dallas", "San Francisco", "Chicago"), "Canada": ("Ottawa", "Vancouver", "Quebec"), "India": ("Mombai", "Delhi", "Bangalore")}
 
+# country and office groups will be created automatically based on OFFICE_DICT
+# this contains other groups to be created
+# in addition I'll write a function that creates some random security groups and add random members
+GROUPS = ["IT Support", "Developers", "HR", "Administrators", "Board", "VIP", "Office license"]
+# these will have only 1 owner and any employee can be a member
+GROUPS_SUBSET = ["IT Support", "Developers", "HR"]
 
 class Employee:
     def __init__(self, name, surname, username):
@@ -14,9 +20,12 @@ class Employee:
         self.office = None
         self.OULevel1 = None # country
         self.OULevel2 = None # office
+        self.password = "Zaq12wsx"
+        self.groups = []
+        self.groupsOwner = []
 
     def showProperties(self):
-        return f"{self.name:<15} {self.surname:<20} {self.username:<10} {self.emailAlias:<40} {self.managerLevel:<3} {self.manager:<10} {self.office}"
+        return f"{self.name:<15} {self.surname:<20} {self.username:<10} {self.emailAlias:<40} {self.managerLevel:<3} {self.manager:<10} {self.office:<15} {self.OULevel1:<15} {self.OULevel2:<15} {self.password:<10} {self.groups}"
 
 
 def createUserObjects(k):
@@ -71,7 +80,8 @@ def defineManagers(employeeList):
     return None
 
 def assignToOffice(employeeList): # ugh, very inefficent (O(n2) I suppose), will have to be reconsidered
-# another consideration - input List has to be sorted by emp.managerLevel attribute (it is since it is executed in main func after defineManagers())
+# another consideration - input List has to be sorted by emp.managerLevel attribute (it is since it is executed in main func after defineManagers(), but I'll add it still there, still python's timsort is very efficient - best case scenario O(n))
+    employeeList.sort(key = lambda x: x.managerLevel)
     for emp in employeeList:
         if emp.managerLevel <= 3:
             country = random.choice(list(OFFICE_DICT.keys()))
@@ -85,6 +95,38 @@ def assignToOffice(employeeList): # ugh, very inefficent (O(n2) I suppose), will
             emp.OULevel2 = empRef.OULevel2
             emp.office = empRef.office
     return None
+
+def createRandomGroups(k):
+    k = int(k)
+    groupsDict = {}
+    randomGroupsNumber = random.randint(int(k/40), int(k/10))
+    for i in range(randomGroupsNumber): # number of groups to be created is arbitrary
+        groupsDict[f"GroupNo{i+1}"] = []
+    for item in GROUPS:
+        groupsDict[item] = []
+    return groupsDict
+
+def assignToGroups(employeeList, groupsDict):
+    # employeeList has to be sorted by emp.managerLevel attribute
+    employeeList.sort(key = lambda x: x.managerLevel)
+    # groupsOneOwner = GROUPS_SUBSET[:]
+    numberOfGroups = len(groupsDict)
+    for emp in employeeList:
+        emp.groups.append("Office license")
+        groupsDict["Office license"].append(emp.username)
+        if emp.managerLevel <= 4:
+            emp.groups.append("VIP")
+            groupsDict["VIP"].append(emp.username)
+            if emp.managerLevel <= 3:
+                emp.groups.append("Administrators")
+                groupsDict["Administrators"].append(emp.username)
+                if emp.managerLevel <= 2:
+                    emp.groups.append("Board")
+                    groupsDict["Board"].append(emp.username)
+        for group in groupsDict:
+            if (group not in ["Administrators", "Board", "VIP", "Office license"]) and (random.randint(0, numberOfGroups) == 0): # give everyone 1/numberOfGroups chance to be a member of every group
+                emp.groups.append(group)
+                groupsDict[group].append(emp.username) 
 
 def printStatistics(employeeList):
     print(f"# CEO = {sum(1 for x in employeeList if x.managerLevel == 1)}\n# Level 2 = {sum(1 for x in empList if x.managerLevel == 2)}\n# Level 3 = {sum(1 for x in empList if x.managerLevel == 3)}\n# Level 4 = {sum(1 for x in empList if x.managerLevel == 4)}\n# Level 5 = {sum(1 for x in empList if x.managerLevel == 5)}\n# Level 6 = {sum(1 for x in empList if x.managerLevel == 6)}\n# Level 7 = {sum(1 for x in empList if x.managerLevel == 7)}")
@@ -106,7 +148,8 @@ with open("names2000.csv", 'r', encoding="utf-8-sig") as namesFile:
         modifyEmailAlias(empList)
         defineManagers(empList)
         assignToOffice(empList)
-
+        groupsDict = createRandomGroups(k)
+        assignToGroups(empList, groupsDict)
 
         for i in range(100):
             print(sorted(empList,key = lambda x: x.managerLevel)[i].showProperties())
