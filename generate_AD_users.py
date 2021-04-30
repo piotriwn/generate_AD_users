@@ -8,7 +8,7 @@ OFFICE_DICT = {"England" : ("London", "Cambridge", "Bristol", "Liverpool"), "Uni
 # country and office groups will be created automatically based on OFFICE_DICT
 # this contains other groups to be created
 # in addition I'll write a function that creates some random security groups and add random members
-GROUPS = ["IT Support", "Developers", "HR", "Administrators", "Board", "VIP", "Office license"]
+GROUPS = ["IT Support", "Developers", "HR", "Administrators", "Board", "VIP", "Office license", "Domain Users"]
 # these will have only 1 owner and any employee can be a member
 GROUPS_SUBSET = ["IT Support", "Developers", "HR"]
 
@@ -27,12 +27,16 @@ class Employee:
         self.groups = []
         self.groupsOwner = []
         self.propertyList = None
+        self.propertyNameList = None
 
     def showProperties(self):
         return f"{self.name:<15} {self.surname:<20} {self.username:<10} {self.emailAlias:<40} {self.managerLevel:<3} {self.manager:<10} {self.office:<15} {self.OULevel1:<15} {self.OULevel2:<15} {self.password:<10} {self.groups}"
 
     def writePropertiesToList(self):
         self.propertyList = [self.name, self.surname, self.username, self.emailAlias, self.managerLevel, self.manager, self.office, self.OULevel1, self.OULevel2, self.password, self.groups, self.groupsOwner]
+
+    def writePropertyNameList(self):
+        self.propertyNameList = ["Name", "Surname", "Username", "Email alias", "Managerial level", "Manager", "Office", "OU Level 1 - Country", "OU Level 2 - Office", "Password", "Groups", "Owner of groups"]
 
 
 def createUserObjects(k):
@@ -121,7 +125,9 @@ def assignToGroups(employeeList, groupsDict):
     numberOfGroups = len(groupsDict)
     for emp in employeeList:
         emp.groups.append("Office license")
+        emp.groups.append("Domain Users")
         groupsDict["Office license"].append(emp.username)
+        groupsDict["Domain Users"].append(emp.username)
         if emp.managerLevel <= 4:
             emp.groups.append("VIP")
             groupsDict["VIP"].append(emp.username)
@@ -162,8 +168,8 @@ with open("names2000.csv", 'r', encoding="utf-8-sig") as namesFile:
     with open("surnames1000.csv",'r', encoding="utf-8-sig") as surnamesFile:
         with open("employees.csv", mode='w', newline='') as employeeData:
             with open("groups.csv", mode="w", newline='') as groupData:
-                employeeWriter = csv.writer(employeeData, delimiter=";", quotechar='"', quoting=csv.QUOTE_ALL)
-                groupWriter = csv.writer(groupData, delimiter=";", quotechar='"', quoting=csv.QUOTE_ALL)
+                employeeWriter = csv.writer(employeeData, delimiter=";", quoting=csv.QUOTE_NONE)
+                groupWriter = csv.writer(groupData, delimiter=";", quoting=csv.QUOTE_NONE)
 
                 namesList = namesFile.readlines()
                 surnamesList = surnamesFile.readlines()
@@ -181,21 +187,20 @@ with open("names2000.csv", 'r', encoding="utf-8-sig") as namesFile:
                 assignToGroups(empList, groupsDict)
                 assignOwners(empList, groupsDict)
 
+                # format before printing
+                for emp in empList:
+                    emp.groups = ','.join(emp.groups).replace("[", "").replace("]", "").replace("'", "")
+                    emp.groupsOwner = ','.join(emp.groupsOwner).replace("[", "").replace("]", "").replace("'", "")
+
+                empList[0].writePropertyNameList()
+                employeeWriter.writerow( empList[0].propertyNameList )
                 for emp in empList:
                     emp.writePropertiesToList()
                     employeeWriter.writerow(emp.propertyList)
 
+                # format before printing
+                for groupKey, groupVal in groupsDict.items():
+                    groupsDict[groupKey] = ','.join(groupVal).replace("[", "").replace("]", "").replace("'", "")
+
+                groupWriter.writerow(["Group Name", "Members"])
                 groupWriter.writerows(groupsDict.items())
-
-                # print(empList[10])
-                # print(groupsDict["GroupNo10"])
-
-                # for i in range(100):
-                    # print(sorted(empList,key = lambda x: x.managerLevel)[i].showProperties())
-
-                # printStatistics(empList)
-
-        
-
-
-
